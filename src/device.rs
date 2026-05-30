@@ -5,6 +5,7 @@ use std::net::Ipv4Addr;
 pub struct MacAddr(pub [u8; 6]);
 
 impl MacAddr {
+    #[allow(dead_code)] // used in tests; useful utility for callers
     pub fn parse(s: &str) -> Option<Self> {
         let parts: Vec<&str> = s.split(':').collect();
         if parts.len() != 6 {

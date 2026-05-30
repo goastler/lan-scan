@@ -98,10 +98,10 @@ pub fn arp_scan(
             match rx.next() {
                 Ok(frame) => {
                     if let Some((ip, mac)) = parse_arp_reply(frame) {
-                        if network.contains(ip) && seen.insert(ip) {
-                            if result_tx.send((ip, mac)).is_err() {
-                                break; // main dropped the receiver
-                            }
+                        if network.contains(ip) && seen.insert(ip)
+                            && result_tx.send((ip, mac)).is_err()
+                        {
+                            break; // main dropped the receiver
                         }
                     }
                 }

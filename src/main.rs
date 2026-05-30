@@ -65,16 +65,16 @@ fn main() -> Result<()> {
     eprintln!("Scanning {} on {} ({local_ip}) …\n", net, iface.name);
 
     // ── Phase 1: ARP discovery, stream each device immediately ───────────
-    println!("{:<15}  {:<17}  {}", "IP Address", "MAC Address", "Hostname");
+    println!("{:<15}  {:<17}  Hostname", "IP Address", "MAC Address");
     println!("{}", "─".repeat(55));
 
     let arp_rx = scanner::arp_scan(&iface, net, local_ip, Duration::from_secs(cli.timeout))?;
-    let mut discovered: Vec<std::net::Ipv4Addr> = Vec::new();
+    let mut discovered: Vec<device::Device> = Vec::new();
 
     for (ip, mac) in arp_rx {
         let hostname = resolver::resolve_hostname(ip);
         println!("{:<15}  {:<17}  {}", ip, mac, hostname);
-        discovered.push(ip);
+        discovered.push(device::Device::new(ip, mac, hostname));
     }
 
     eprintln!("\n{} device(s) found.", discovered.len());
@@ -93,15 +93,16 @@ fn main() -> Result<()> {
     };
     eprintln!("\nPort scanning {} device(s) ({port_desc})…\n", discovered.len());
 
-    println!("{:<15}  {:<30}  {}", "IP Address", "TCP Open", "UDP Open / Filtered");
+    println!("{:<15}  {:<30}  UDP Open / Filtered", "IP Address", "TCP Open");
     println!("{}", "─".repeat(75));
 
     let (result_tx, result_rx) = mpsc::channel::<PortResults>();
-    for ip in discovered {
+    for d in discovered {
         let tx = result_tx.clone();
         let tcp = tcp_ports.clone();
         let udp = udp_ports.clone();
         let t = scan_timeout;
+        let ip = d.ip;
         std::thread::spawn(move || {
             let tcp_open = tcp.map(|p| port_scanner::tcp_scan(ip, &p, t)).unwrap_or_default();
             let udp_results = udp.map(|p| port_scanner::udp_scan(ip, &p, t)).unwrap_or_default();

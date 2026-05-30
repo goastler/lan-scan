@@ -1,0 +1,21 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release
+      - name: Stage binary
+        run: cp target/release/lan lan-linux-x86_64
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: lan-linux-x86_64
