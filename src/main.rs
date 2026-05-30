@@ -29,6 +29,10 @@ struct Cli {
     #[arg(long, value_name = "PORTS", num_args = 0..=1, default_missing_value = "1-65535")]
     udp: Option<String>,
 
+    /// IP range to scan in CIDR notation, e.g. 10.0.0.0/24 (default: interface subnet)
+    #[arg(short = 'n', long, value_name = "CIDR")]
+    network: Option<ipnetwork::Ipv4Network>,
+
     /// Per-port timeout in milliseconds for TCP/UDP scanning
     #[arg(long, default_value_t = 200)]
     scan_timeout: u64,
@@ -55,7 +59,7 @@ fn main() -> Result<()> {
         .transpose()?;
 
     let iface = network::select_interface(cli.interface.as_deref())?;
-    let net = network::get_network(&iface)?;
+    let net = cli.network.unwrap_or(network::get_network(&iface)?);
     let local_ip = network::local_ipv4(&iface)?;
 
     eprintln!("Scanning {} on {} ({local_ip}) …\n", net, iface.name);
