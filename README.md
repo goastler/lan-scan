@@ -2,6 +2,8 @@
 
 A fast LAN network scanner. Discovers devices on the local network via ARP and optionally scans TCP/UDP ports. Results stream to stdout as they arrive.
 
+Built out of frustration with router web GUIs that don't show all connected devices — looking at you, BT Home Hub.
+
 ## Requirements
 
 - Linux
