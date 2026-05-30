@@ -5,7 +5,6 @@ mod scanner;
 
 use anyhow::Result;
 use clap::Parser;
-use comfy_table::{presets::UTF8_FULL, Table};
 use std::time::Duration;
 
 /// LAN network scanner — discovers devices via ARP
@@ -28,29 +27,19 @@ fn main() -> Result<()> {
     let net = network::get_network(&iface)?;
     let local_ip = network::local_ipv4(&iface)?;
 
-    eprintln!("Scanning {} on {} ({local_ip}) …", net, iface.name);
+    eprintln!("Scanning {} on {} ({local_ip}) …\n", net, iface.name);
 
-    let timeout = Duration::from_secs(cli.timeout);
-    let mut pairs = scanner::arp_scan(&iface, net, local_ip, timeout)?;
-    pairs.sort_by_key(|(ip, _)| *ip);
+    println!("{:<15}  {:<17}  {}", "IP Address", "MAC Address", "Hostname");
+    println!("{}", "─".repeat(55));
 
-    let devices: Vec<device::Device> = pairs
-        .into_iter()
-        .map(|(ip, mac)| {
-            let hostname = resolver::resolve_hostname(ip);
-            device::Device::new(ip, mac, hostname)
-        })
-        .collect();
-
-    eprintln!("Found {} device(s).\n", devices.len());
-
-    let mut table = Table::new();
-    table.load_preset(UTF8_FULL);
-    table.set_header(["IP Address", "MAC Address", "Hostname"]);
-    for d in &devices {
-        table.add_row([d.ip.to_string(), d.mac.to_string(), d.hostname.clone()]);
+    let rx = scanner::arp_scan(&iface, net, local_ip, Duration::from_secs(cli.timeout))?;
+    let mut count = 0usize;
+    for (ip, mac) in rx {
+        let hostname = resolver::resolve_hostname(ip);
+        println!("{:<15}  {:<17}  {}", ip, mac, hostname);
+        count += 1;
     }
-    println!("{table}");
 
+    eprintln!("\n{count} device(s) found.");
     Ok(())
 }

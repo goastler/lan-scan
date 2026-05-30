@@ -6,8 +6,9 @@ use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpPacket, MutableArpPa
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::Packet;
 use pnet::util::MacAddr as PnetMac;
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::net::Ipv4Addr;
+use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 const ETH_FRAME_LEN: usize = 42;
@@ -49,12 +50,17 @@ pub fn parse_arp_reply(frame: &[u8]) -> Option<(Ipv4Addr, MacAddr)> {
     Some((arp.get_sender_proto_addr(), MacAddr::from_pnet(arp.get_sender_hw_addr())))
 }
 
+/// Scans `network` on `iface` by broadcasting ARP requests and collecting
+/// replies until `timeout` expires. Returns a channel receiver that yields
+/// each newly discovered `(ip, mac)` pair as it arrives.
+///
+/// Requires `CAP_NET_RAW` (run as root or `sudo`).
 pub fn arp_scan(
     iface: &NetworkInterface,
     network: Ipv4Network,
     sender_ip: Ipv4Addr,
     timeout: Duration,
-) -> Result<Vec<(Ipv4Addr, MacAddr)>> {
+) -> Result<mpsc::Receiver<(Ipv4Addr, MacAddr)>> {
     let config = datalink::Config {
         read_timeout: Some(Duration::from_millis(100)),
         ..Default::default()
@@ -67,11 +73,12 @@ pub fn arp_scan(
     };
 
     let sender_mac = iface.mac.ok_or_else(|| anyhow::anyhow!("Interface has no MAC"))?;
+    let (result_tx, result_rx) = mpsc::channel();
 
-    let net = network;
+    // Send ARP requests to every host in the subnet.
     std::thread::spawn(move || {
-        for ip in net.iter() {
-            if ip == net.network() || ip == net.broadcast() || ip == sender_ip {
+        for ip in network.iter() {
+            if ip == network.network() || ip == network.broadcast() || ip == sender_ip {
                 continue;
             }
             let frame = build_arp_request(sender_mac, sender_ip, ip);
@@ -79,28 +86,34 @@ pub fn arp_scan(
         }
     });
 
-    let deadline = Instant::now() + timeout;
-    let mut seen: HashMap<Ipv4Addr, MacAddr> = HashMap::new();
-    loop {
-        if Instant::now() >= deadline {
-            break;
-        }
-        match rx.next() {
-            Ok(frame) => {
-                if let Some((ip, mac)) = parse_arp_reply(frame) {
-                    if network.contains(ip) {
-                        seen.entry(ip).or_insert(mac);
+    // Collect replies until the deadline, forwarding each new device via channel.
+    // When this thread exits, result_tx drops and the receiver's iterator ends.
+    std::thread::spawn(move || {
+        let deadline = Instant::now() + timeout;
+        let mut seen: HashSet<Ipv4Addr> = HashSet::new();
+        loop {
+            if Instant::now() >= deadline {
+                break;
+            }
+            match rx.next() {
+                Ok(frame) => {
+                    if let Some((ip, mac)) = parse_arp_reply(frame) {
+                        if network.contains(ip) && seen.insert(ip) {
+                            if result_tx.send((ip, mac)).is_err() {
+                                break; // main dropped the receiver
+                            }
+                        }
                     }
                 }
+                Err(e)
+                    if e.kind() == std::io::ErrorKind::TimedOut
+                        || e.kind() == std::io::ErrorKind::WouldBlock => {}
+                Err(_) => break,
             }
-            Err(e)
-                if e.kind() == std::io::ErrorKind::TimedOut
-                    || e.kind() == std::io::ErrorKind::WouldBlock => {}
-            Err(_) => break,
         }
-    }
+    });
 
-    Ok(seen.into_iter().collect())
+    Ok(result_rx)
 }
 
 #[cfg(test)]
@@ -187,7 +200,8 @@ mod tests {
         let iface = network::select_interface(None).unwrap();
         let net = network::get_network(&iface).unwrap();
         let lip = network::local_ipv4(&iface).unwrap();
-        let found = arp_scan(&iface, net, lip, Duration::from_secs(3)).unwrap();
+        let rx = arp_scan(&iface, net, lip, Duration::from_secs(3)).unwrap();
+        let found: Vec<_> = rx.into_iter().collect();
         println!("Found {} devices", found.len());
         assert!(!found.is_empty());
     }
