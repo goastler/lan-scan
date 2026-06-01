@@ -13,6 +13,15 @@ categories = ["command-line-utilities", "network-programming"]
 name = "lan"
 path = "src/main.rs"
 
+[package.metadata.deb]
+maintainer = "George Oastler <goastler4@gmail.com>"
+section = "net"
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/lan", dest = "/usr/bin/lan", mode = "0755" },
+]
+
 [dependencies]
 pnet        = "0.35"
 ipnetwork   = "0.20"

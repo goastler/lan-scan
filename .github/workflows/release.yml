@@ -15,6 +15,7 @@ jobs:
             os: ubuntu-latest
             name: lanscan-linux-x86_64
             use_cross: true
+            make_packages: true
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             name: lanscan-linux-x86_64-musl
@@ -23,6 +24,7 @@ jobs:
             os: ubuntu-latest
             name: lanscan-linux-aarch64
             use_cross: true
+            make_packages: true
           - target: aarch64-unknown-linux-musl
             os: ubuntu-latest
             name: lanscan-linux-aarch64-musl
@@ -31,6 +33,7 @@ jobs:
             os: ubuntu-latest
             name: lanscan-linux-armv7
             use_cross: true
+            make_packages: true
           - target: arm-unknown-linux-gnueabihf
             os: ubuntu-latest
             name: lanscan-linux-armv6-hf
@@ -55,6 +58,7 @@ jobs:
             os: ubuntu-latest
             name: lanscan-linux-x86
             use_cross: true
+            make_packages: true
           - target: i686-unknown-linux-musl
             os: ubuntu-latest
             name: lanscan-linux-x86-musl
@@ -109,6 +113,70 @@ jobs:
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: ${{ matrix.name }}
+
+      - name: Install cargo-deb and cargo-generate-rpm
+        if: matrix.make_packages
+        run: cargo install cargo-deb cargo-generate-rpm --locked
+
+      - name: Build .deb
+        if: matrix.make_packages
+        run: cargo deb --target ${{ matrix.target }} --no-build
+
+      - name: Build .rpm
+        if: matrix.make_packages
+        run: cargo generate-rpm --target ${{ matrix.target }}
+
+      - name: Upload packages
+        if: matrix.make_packages
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: |
+            target/${{ matrix.target }}/debian/*.deb
+            target/${{ matrix.target }}/generate-rpm/*.rpm
+
+  pkgbuild:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Generate PKGBUILD
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          URL="https://github.com/goastler/lan-scan/archive/refs/tags/${TAG}.tar.gz"
+          SHA256=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          cat > PKGBUILD <<EOF
+          # Maintainer: George Oastler <goastler4@gmail.com>
+          pkgname=lanscan
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc='LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports'
+          arch=('x86_64' 'aarch64' 'armv7h')
+          url='https://github.com/goastler/lan-scan'
+          license=('MIT')
+          depends=()
+          makedepends=('rust' 'cargo')
+          source=("${pkgname}-${VERSION}.tar.gz::${URL}")
+          sha256sums=('${SHA256}')
+
+          build() {
+              cd "lan-scan-${VERSION}"
+              cargo build --release --locked
+          }
+
+          package() {
+              cd "lan-scan-${VERSION}"
+              install -Dm755 target/release/lan "\${pkgdir}/usr/bin/lan"
+              install -Dm644 LICENSE "\${pkgdir}/usr/share/licenses/\${pkgname}/LICENSE"
+              install -Dm644 README.md "\${pkgdir}/usr/share/doc/\${pkgname}/README.md"
+          }
+          EOF
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: PKGBUILD
 
   publish:
     needs: build
