@@ -31,6 +31,18 @@ jobs:
             os: ubuntu-latest
             name: lanscan-linux-armv7
             use_cross: true
+          - target: arm-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            name: lanscan-linux-armv6-hf
+            use_cross: true
+          - target: arm-unknown-linux-gnueabi
+            os: ubuntu-latest
+            name: lanscan-linux-armv6
+            use_cross: true
+          - target: armv5te-unknown-linux-gnueabi
+            os: ubuntu-latest
+            name: lanscan-linux-armv5
+            use_cross: true
           - target: x86_64-apple-darwin
             os: macos-latest
             name: lanscan-macos-x86_64
