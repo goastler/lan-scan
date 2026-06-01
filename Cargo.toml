@@ -2,6 +2,12 @@
 name = "lan-scan"
 version = "1.0.0"
 edition = "2021"
+description = "LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports"
+license = "MIT"
+repository = "https://github.com/goastler/lan-scan"
+readme = "README.md"
+keywords = ["network", "scanner", "arp", "lan"]
+categories = ["command-line-utilities", "network-programming"]
 
 [[bin]]
 name = "lan"
