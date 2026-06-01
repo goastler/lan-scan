@@ -1,4 +1,4 @@
-# lan
+# lanscan
 
 A fast LAN network scanner. Discovers devices on the local network via ARP and optionally scans TCP/UDP ports. Results stream to stdout as they arrive.
 

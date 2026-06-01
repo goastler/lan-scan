@@ -1,5 +1,5 @@
 [package]
-name = "lan-scan"
+name = "lanscan"
 version = "1.0.0"
 edition = "2021"
 description = "LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports"

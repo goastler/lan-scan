@@ -7,18 +7,75 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: lanscan-linux-x86_64
+            use_cross: true
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            name: lanscan-linux-x86_64-musl
+            use_cross: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: lanscan-linux-aarch64
+            use_cross: true
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            name: lanscan-linux-aarch64-musl
+            use_cross: true
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            name: lanscan-linux-armv7
+            use_cross: true
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            name: lanscan-macos-x86_64
+            use_cross: false
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            name: lanscan-macos-aarch64
+            use_cross: false
+
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: taiki-e/install-action@v2
+        if: matrix.use_cross
+        with:
+          tool: cross
+
+      - name: Build (cross)
+        if: matrix.use_cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Build (cargo)
+        if: '!matrix.use_cross'
+        run: cargo build --release --target ${{ matrix.target }}
+
       - name: Stage binary
-        run: cp target/release/lan lan-linux-x86_64
+        run: cp target/${{ matrix.target }}/release/lan ${{ matrix.name }}
+
       - uses: softprops/action-gh-release@v2
         with:
-          files: lan-linux-x86_64
+          files: ${{ matrix.name }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - name: Publish to crates.io
         run: cargo publish
         env:
