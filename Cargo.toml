@@ -1,10 +1,10 @@
 [package]
 name = "lanscan"
-version = "1.0.7"
+version = "1.0.8"
 edition = "2021"
 description = "LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports"
 license = "AGPL-3.0-only"
-repository = "https://github.com/goastler/lan-scan"
+repository = "https://github.com/goastler/lanscan"
 readme = "README.md"
 keywords = ["network", "scanner", "arp", "lan"]
 categories = ["command-line-utilities", "network-programming"]

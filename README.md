@@ -16,7 +16,7 @@ cargo install lanscan
 yay -S lanscan
 ```
 
-**Binary releases:** download a pre-built binary for your platform from the [releases page](https://github.com/goastler/lan-scan/releases/latest).
+**Binary releases:** download a pre-built binary for your platform from the [releases page](https://github.com/goastler/lanscan/releases/latest).
 
 ## Requirements
 

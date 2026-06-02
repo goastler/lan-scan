@@ -147,14 +147,14 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           VERSION="${TAG#v}"
-          BASEURL="https://github.com/goastler/lan-scan/releases/download/${TAG}"
+          BASEURL="https://github.com/goastler/lanscan/releases/download/${TAG}"
           PKGDESC='LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports'
 
           # Download each arch binary and compute checksums
           curl -sL "${BASEURL}/lanscan-linux-x86_64" -o bin-x86_64
           curl -sL "${BASEURL}/lanscan-linux-aarch64" -o bin-aarch64
           curl -sL "${BASEURL}/lanscan-linux-armv7"   -o bin-armv7h
-          curl -sL "https://raw.githubusercontent.com/goastler/lan-scan/refs/tags/${TAG}/LICENSE" -o LICENSE_FILE
+          curl -sL "https://raw.githubusercontent.com/goastler/lanscan/refs/tags/${TAG}/LICENSE" -o LICENSE_FILE
 
           SHA256_X86_64=$(sha256sum bin-x86_64    | cut -d' ' -f1)
           SHA256_AARCH64=$(sha256sum bin-aarch64  | cut -d' ' -f1)
@@ -168,9 +168,9 @@ jobs:
           pkgrel=1
           pkgdesc='${PKGDESC}'
           arch=('x86_64' 'aarch64' 'armv7h')
-          url='https://github.com/goastler/lan-scan'
+          url='https://github.com/goastler/lanscan'
           license=('AGPL-3.0-only')
-          source=("LICENSE::https://raw.githubusercontent.com/goastler/lan-scan/refs/tags/v${VERSION}/LICENSE")
+          source=("LICENSE::https://raw.githubusercontent.com/goastler/lanscan/refs/tags/v${VERSION}/LICENSE")
           source_x86_64=("lan::${BASEURL}/lanscan-linux-x86_64")
           source_aarch64=("lan::${BASEURL}/lanscan-linux-aarch64")
           source_armv7h=("lan::${BASEURL}/lanscan-linux-armv7")
@@ -190,12 +190,12 @@ jobs:
           	pkgdesc = ${PKGDESC}
           	pkgver = ${VERSION}
           	pkgrel = 1
-          	url = https://github.com/goastler/lan-scan
+          	url = https://github.com/goastler/lanscan
           	arch = x86_64
           	arch = aarch64
           	arch = armv7h
           	license = AGPL-3.0-only
-          	source = LICENSE::https://raw.githubusercontent.com/goastler/lan-scan/refs/tags/v${VERSION}/LICENSE
+          	source = LICENSE::https://raw.githubusercontent.com/goastler/lanscan/refs/tags/v${VERSION}/LICENSE
           	sha256sums = ${SHA256_LICENSE}
           	source_x86_64 = lan::${BASEURL}/lanscan-linux-x86_64
           	sha256sums_x86_64 = ${SHA256_X86_64}
