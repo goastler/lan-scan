@@ -252,14 +252,12 @@ jobs:
       - name: Push to AUR
         env:
           TAG: ${{ github.ref_name }}
-          AUR_GPG_FINGERPRINT: ${{ vars.AUR_GPG_FINGERPRINT }}
         run: |
           git clone ssh://aur@aur.archlinux.org/lanscan.git aur-repo
           cp PKGBUILD .SRCINFO aur-repo/
           cd aur-repo
           git config user.name "George Oastler"
           git config user.email "goastler4@gmail.com"
-          git config user.signingkey "$(echo "$AUR_GPG_FINGERPRINT" | tr -d ' ')"
           git config commit.gpgsign true
           git add PKGBUILD .SRCINFO
           git diff --cached --quiet || git commit -m "update to ${TAG}"
