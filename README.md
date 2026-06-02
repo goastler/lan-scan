@@ -16,7 +16,27 @@ cargo install lanscan
 yay -S lanscan
 ```
 
-**Binary releases:** download a pre-built binary for your platform from the [releases page](https://github.com/goastler/lanscan/releases/latest).
+**Debian / Ubuntu (`.deb`):**
+```bash
+curl -LO https://github.com/goastler/lanscan/releases/latest/download/lanscan_amd64.deb
+sudo dpkg -i lanscan_amd64.deb
+```
+Replace `amd64` with `arm64` or `armhf` as needed.
+
+**RHEL / Fedora (`.rpm`):**
+```bash
+sudo rpm -i https://github.com/goastler/lanscan/releases/latest/download/lanscan.x86_64.rpm
+```
+
+**Pre-built binary (Linux/macOS):**
+```bash
+# Linux x86_64 example — see releases page for other platforms
+curl -LO https://github.com/goastler/lanscan/releases/latest/download/lanscan-linux-x86_64
+chmod +x lanscan-linux-x86_64
+sudo mv lanscan-linux-x86_64 /usr/local/bin/lan
+```
+
+All platforms and formats: [github.com/goastler/lanscan/releases/latest](https://github.com/goastler/lanscan/releases/latest)
 
 ## Requirements
 

@@ -151,14 +151,20 @@ jobs:
           PKGDESC='LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports'
 
           # Download each arch binary and compute checksums
-          curl -sL "${BASEURL}/lanscan-linux-x86_64" -o bin-x86_64
-          curl -sL "${BASEURL}/lanscan-linux-aarch64" -o bin-aarch64
-          curl -sL "${BASEURL}/lanscan-linux-armv7"   -o bin-armv7h
+          curl -sL "${BASEURL}/lanscan-linux-x86_64"   -o bin-x86_64
+          curl -sL "${BASEURL}/lanscan-linux-x86"       -o bin-i686
+          curl -sL "${BASEURL}/lanscan-linux-aarch64"   -o bin-aarch64
+          curl -sL "${BASEURL}/lanscan-linux-armv7"     -o bin-armv7h
+          curl -sL "${BASEURL}/lanscan-linux-armv6-hf"  -o bin-armv6h
+          curl -sL "${BASEURL}/lanscan-linux-riscv64"   -o bin-riscv64
           curl -sL "https://raw.githubusercontent.com/goastler/lanscan/refs/tags/${TAG}/LICENSE" -o LICENSE_FILE
 
           SHA256_X86_64=$(sha256sum bin-x86_64    | cut -d' ' -f1)
+          SHA256_I686=$(sha256sum bin-i686        | cut -d' ' -f1)
           SHA256_AARCH64=$(sha256sum bin-aarch64  | cut -d' ' -f1)
           SHA256_ARMV7H=$(sha256sum bin-armv7h    | cut -d' ' -f1)
+          SHA256_ARMV6H=$(sha256sum bin-armv6h    | cut -d' ' -f1)
+          SHA256_RISCV64=$(sha256sum bin-riscv64  | cut -d' ' -f1)
           SHA256_LICENSE=$(sha256sum LICENSE_FILE | cut -d' ' -f1)
 
           cat > PKGBUILD <<EOF
@@ -167,17 +173,23 @@ jobs:
           pkgver=${VERSION}
           pkgrel=1
           pkgdesc='${PKGDESC}'
-          arch=('x86_64' 'aarch64' 'armv7h')
+          arch=('x86_64' 'i686' 'aarch64' 'armv7h' 'armv6h' 'riscv64')
           url='https://github.com/goastler/lanscan'
           license=('AGPL-3.0-only')
           source=("LICENSE::https://raw.githubusercontent.com/goastler/lanscan/refs/tags/v${VERSION}/LICENSE")
           source_x86_64=("lan::${BASEURL}/lanscan-linux-x86_64")
+          source_i686=("lan::${BASEURL}/lanscan-linux-x86")
           source_aarch64=("lan::${BASEURL}/lanscan-linux-aarch64")
           source_armv7h=("lan::${BASEURL}/lanscan-linux-armv7")
+          source_armv6h=("lan::${BASEURL}/lanscan-linux-armv6-hf")
+          source_riscv64=("lan::${BASEURL}/lanscan-linux-riscv64")
           sha256sums=('${SHA256_LICENSE}')
           sha256sums_x86_64=('${SHA256_X86_64}')
+          sha256sums_i686=('${SHA256_I686}')
           sha256sums_aarch64=('${SHA256_AARCH64}')
           sha256sums_armv7h=('${SHA256_ARMV7H}')
+          sha256sums_armv6h=('${SHA256_ARMV6H}')
+          sha256sums_riscv64=('${SHA256_RISCV64}')
 
           package() {
               install -Dm755 "\${srcdir}/lan" "\${pkgdir}/usr/bin/lan"
@@ -192,17 +204,26 @@ jobs:
           	pkgrel = 1
           	url = https://github.com/goastler/lanscan
           	arch = x86_64
+          	arch = i686
           	arch = aarch64
           	arch = armv7h
+          	arch = armv6h
+          	arch = riscv64
           	license = AGPL-3.0-only
           	source = LICENSE::https://raw.githubusercontent.com/goastler/lanscan/refs/tags/v${VERSION}/LICENSE
           	sha256sums = ${SHA256_LICENSE}
           	source_x86_64 = lan::${BASEURL}/lanscan-linux-x86_64
           	sha256sums_x86_64 = ${SHA256_X86_64}
+          	source_i686 = lan::${BASEURL}/lanscan-linux-x86
+          	sha256sums_i686 = ${SHA256_I686}
           	source_aarch64 = lan::${BASEURL}/lanscan-linux-aarch64
           	sha256sums_aarch64 = ${SHA256_AARCH64}
           	source_armv7h = lan::${BASEURL}/lanscan-linux-armv7
           	sha256sums_armv7h = ${SHA256_ARMV7H}
+          	source_armv6h = lan::${BASEURL}/lanscan-linux-armv6-hf
+          	sha256sums_armv6h = ${SHA256_ARMV6H}
+          	source_riscv64 = lan::${BASEURL}/lanscan-linux-riscv64
+          	sha256sums_riscv64 = ${SHA256_RISCV64}
 
           pkgname = lanscan
           EOF
