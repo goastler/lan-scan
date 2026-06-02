@@ -1,6 +1,6 @@
 [package]
 name = "lanscan"
-version = "1.0.4"
+version = "1.0.5"
 edition = "2021"
 description = "LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports"
 license = "AGPL-3.0-only"

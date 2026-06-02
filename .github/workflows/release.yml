@@ -133,6 +133,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Set up SSH for AUR
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AUR_SSH_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          printf 'Host aur.archlinux.org\n  IdentityFile ~/.ssh/aur\n  User aur\n' >> ~/.ssh/config
       - name: Generate PKGBUILD and .SRCINFO
         env:
           TAG: ${{ github.ref_name }}
@@ -187,7 +196,19 @@ jobs:
           EOF
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          files: PKGBUILD
+          files: |
+            PKGBUILD
+            .SRCINFO
+      - name: Push to AUR
+        run: |
+          git clone ssh://aur@aur.archlinux.org/lanscan.git aur-repo
+          cp PKGBUILD .SRCINFO aur-repo/
+          cd aur-repo
+          git config user.name "George Oastler"
+          git config user.email "goastler4@gmail.com"
+          git add PKGBUILD .SRCINFO
+          git diff --cached --quiet || git commit -m "update to ${{ github.ref_name }}"
+          git push
 
   publish:
     needs: build
