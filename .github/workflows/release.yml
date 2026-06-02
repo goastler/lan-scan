@@ -146,7 +146,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "$AUR_SSH_KEY" > ~/.ssh/aur
           chmod 600 ~/.ssh/aur
-          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          FETCHED=$(ssh-keyscan -t ed25519 aur.archlinux.org 2>/dev/null)
+          ACTUAL_FP=$(echo "$FETCHED" | ssh-keygen -l -E sha256 -f /dev/stdin | awk '{print $2}')
+          EXPECTED_FP="SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4"
+          if [ "$ACTUAL_FP" != "$EXPECTED_FP" ]; then
+            echo "AUR host key fingerprint mismatch: got $ACTUAL_FP" >&2
+            exit 1
+          fi
+          echo "$FETCHED" >> ~/.ssh/known_hosts
           printf 'Host aur.archlinux.org\n  IdentityFile ~/.ssh/aur\n  User aur\n' >> ~/.ssh/config
       - name: Generate PKGBUILD and .SRCINFO
         env:
@@ -239,6 +246,8 @@ jobs:
             PKGBUILD
             .SRCINFO
       - name: Push to AUR
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           git clone ssh://aur@aur.archlinux.org/lanscan.git aur-repo
           cp PKGBUILD .SRCINFO aur-repo/
@@ -246,7 +255,7 @@ jobs:
           git config user.name "George Oastler"
           git config user.email "goastler4@gmail.com"
           git add PKGBUILD .SRCINFO
-          git diff --cached --quiet || git commit -m "update to ${{ github.ref_name }}"
+          git diff --cached --quiet || git commit -m "update to ${TAG}"
           git push
 
   publish:
