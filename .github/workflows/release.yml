@@ -245,10 +245,6 @@ jobs:
           files: |
             PKGBUILD
             .SRCINFO
-      - name: Import GPG key for AUR commit signing
-        env:
-          AUR_GPG_KEY: ${{ secrets.AUR_GPG_KEY }}
-        run: echo "$AUR_GPG_KEY" | gpg --batch --import
       - name: Push to AUR
         env:
           TAG: ${{ github.ref_name }}
@@ -258,7 +254,6 @@ jobs:
           cd aur-repo
           git config user.name "George Oastler"
           git config user.email "goastler4@gmail.com"
-          git config commit.gpgsign true
           git add PKGBUILD .SRCINFO
           git diff --cached --quiet || git commit -m "update to ${TAG}"
           git push
