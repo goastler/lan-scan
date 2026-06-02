@@ -2,7 +2,9 @@ use std::net::Ipv4Addr;
 
 pub fn resolve_hostname(ip: Ipv4Addr) -> String {
     let addr = std::net::IpAddr::V4(ip);
-    dns_lookup::lookup_addr(&addr).unwrap_or_else(|_| "(unknown)".to_string())
+    dns_lookup::lookup_addr(&addr)
+        .map(|h| h.chars().filter(|c| !c.is_control()).collect())
+        .unwrap_or_else(|_| "(unknown)".to_string())
 }
 
 #[cfg(test)]

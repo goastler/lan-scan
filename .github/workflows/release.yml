@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -77,6 +80,7 @@ jobs:
             use_cross: false
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
@@ -106,9 +110,10 @@ jobs:
         with:
           files: ${{ matrix.name }}
 
-      - name: Install cargo-deb and cargo-generate-rpm
+      - uses: taiki-e/install-action@e49978b799e49ff429d162b7a30601a569ab6538 # v2
         if: matrix.make_packages
-        run: cargo install cargo-deb cargo-generate-rpm --locked
+        with:
+          tool: cargo-deb,cargo-generate-rpm
 
       - name: Build .deb
         if: matrix.make_packages
@@ -129,6 +134,7 @@ jobs:
   pkgbuild:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -151,13 +157,13 @@ jobs:
           PKGDESC='LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports'
 
           # Download each arch binary and compute checksums
-          curl -sL "${BASEURL}/lanscan-linux-x86_64"   -o bin-x86_64
-          curl -sL "${BASEURL}/lanscan-linux-x86"       -o bin-i686
-          curl -sL "${BASEURL}/lanscan-linux-aarch64"   -o bin-aarch64
-          curl -sL "${BASEURL}/lanscan-linux-armv7"     -o bin-armv7h
-          curl -sL "${BASEURL}/lanscan-linux-armv6-hf"  -o bin-armv6h
-          curl -sL "${BASEURL}/lanscan-linux-riscv64"   -o bin-riscv64
-          curl -sL "https://raw.githubusercontent.com/goastler/lanscan/refs/tags/${TAG}/LICENSE" -o LICENSE_FILE
+          curl -fsSL --max-time 60 "${BASEURL}/lanscan-linux-x86_64"   -o bin-x86_64
+          curl -fsSL --max-time 60 "${BASEURL}/lanscan-linux-x86"       -o bin-i686
+          curl -fsSL --max-time 60 "${BASEURL}/lanscan-linux-aarch64"   -o bin-aarch64
+          curl -fsSL --max-time 60 "${BASEURL}/lanscan-linux-armv7"     -o bin-armv7h
+          curl -fsSL --max-time 60 "${BASEURL}/lanscan-linux-armv6-hf"  -o bin-armv6h
+          curl -fsSL --max-time 60 "${BASEURL}/lanscan-linux-riscv64"   -o bin-riscv64
+          curl -fsSL --max-time 30 "https://raw.githubusercontent.com/goastler/lanscan/refs/tags/${TAG}/LICENSE" -o LICENSE_FILE
 
           SHA256_X86_64=$(sha256sum bin-x86_64    | cut -d' ' -f1)
           SHA256_I686=$(sha256sum bin-i686        | cut -d' ' -f1)
@@ -246,10 +252,13 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - name: Publish to crates.io
-        run: cargo publish --allow-dirty
+        run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
