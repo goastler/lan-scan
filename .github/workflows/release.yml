@@ -147,9 +147,19 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           VERSION="${TAG#v}"
-          URL="https://github.com/goastler/lan-scan/archive/refs/tags/${TAG}.tar.gz"
-          SHA256=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          BASEURL="https://github.com/goastler/lan-scan/releases/download/${TAG}"
           PKGDESC='LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports'
+
+          # Download each arch binary and compute checksums
+          curl -sL "${BASEURL}/lanscan-linux-x86_64" -o bin-x86_64
+          curl -sL "${BASEURL}/lanscan-linux-aarch64" -o bin-aarch64
+          curl -sL "${BASEURL}/lanscan-linux-armv7"   -o bin-armv7h
+          curl -sL "https://raw.githubusercontent.com/goastler/lan-scan/refs/tags/${TAG}/LICENSE" -o LICENSE_FILE
+
+          SHA256_X86_64=$(sha256sum bin-x86_64    | cut -d' ' -f1)
+          SHA256_AARCH64=$(sha256sum bin-aarch64  | cut -d' ' -f1)
+          SHA256_ARMV7H=$(sha256sum bin-armv7h    | cut -d' ' -f1)
+          SHA256_LICENSE=$(sha256sum LICENSE_FILE | cut -d' ' -f1)
 
           cat > PKGBUILD <<EOF
           # Maintainer: George Oastler <goastler4 at gmail dot com>
@@ -160,20 +170,18 @@ jobs:
           arch=('x86_64' 'aarch64' 'armv7h')
           url='https://github.com/goastler/lan-scan'
           license=('AGPL-3.0-only')
-          makedepends=('rust' 'cargo')
-          source=("${pkgname}-${VERSION}.tar.gz::${URL}")
-          sha256sums=('${SHA256}')
-
-          build() {
-              cd "lan-scan-${VERSION}"
-              cargo build --release --locked
-          }
+          source=("LICENSE::https://raw.githubusercontent.com/goastler/lan-scan/refs/tags/v${VERSION}/LICENSE")
+          source_x86_64=("lan::${BASEURL}/lanscan-linux-x86_64")
+          source_aarch64=("lan::${BASEURL}/lanscan-linux-aarch64")
+          source_armv7h=("lan::${BASEURL}/lanscan-linux-armv7")
+          sha256sums=('${SHA256_LICENSE}')
+          sha256sums_x86_64=('${SHA256_X86_64}')
+          sha256sums_aarch64=('${SHA256_AARCH64}')
+          sha256sums_armv7h=('${SHA256_ARMV7H}')
 
           package() {
-              cd "lan-scan-${VERSION}"
-              install -Dm755 target/release/lan "\${pkgdir}/usr/bin/lan"
-              install -Dm644 LICENSE "\${pkgdir}/usr/share/licenses/\${pkgname}/LICENSE"
-              install -Dm644 README.md "\${pkgdir}/usr/share/doc/\${pkgname}/README.md"
+              install -Dm755 "\${srcdir}/lan" "\${pkgdir}/usr/bin/lan"
+              install -Dm644 "\${srcdir}/LICENSE" "\${pkgdir}/usr/share/licenses/\${pkgname}/LICENSE"
           }
           EOF
 
@@ -187,10 +195,14 @@ jobs:
           	arch = aarch64
           	arch = armv7h
           	license = AGPL-3.0-only
-          	makedepends = rust
-          	makedepends = cargo
-          	source = lanscan-${VERSION}.tar.gz::${URL}
-          	sha256sums = ${SHA256}
+          	source = LICENSE::https://raw.githubusercontent.com/goastler/lan-scan/refs/tags/v${VERSION}/LICENSE
+          	sha256sums = ${SHA256_LICENSE}
+          	source_x86_64 = lan::${BASEURL}/lanscan-linux-x86_64
+          	sha256sums_x86_64 = ${SHA256_X86_64}
+          	source_aarch64 = lan::${BASEURL}/lanscan-linux-aarch64
+          	sha256sums_aarch64 = ${SHA256_AARCH64}
+          	source_armv7h = lan::${BASEURL}/lanscan-linux-armv7
+          	sha256sums_armv7h = ${SHA256_ARMV7H}
 
           pkgname = lanscan
           EOF
