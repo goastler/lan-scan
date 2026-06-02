@@ -67,14 +67,6 @@ jobs:
             os: ubuntu-latest
             name: lanscan-linux-riscv64
             use_cross: true
-          - target: mipsel-unknown-linux-gnu
-            os: ubuntu-latest
-            name: lanscan-linux-mipsel
-            use_cross: true
-          - target: mips-unknown-linux-gnu
-            os: ubuntu-latest
-            name: lanscan-linux-mips
-            use_cross: true
           - target: x86_64-apple-darwin
             os: macos-latest
             name: lanscan-macos-x86_64
@@ -120,7 +112,7 @@ jobs:
 
       - name: Build .deb
         if: matrix.make_packages
-        run: cargo deb --target ${{ matrix.target }} --no-build
+        run: cargo deb --target ${{ matrix.target }} --no-build --no-strip
 
       - name: Build .rpm
         if: matrix.make_packages

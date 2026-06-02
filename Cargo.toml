@@ -1,6 +1,6 @@
 [package]
 name = "lanscan"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 description = "LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports"
 license = "AGPL-3.0-only"
@@ -16,6 +16,7 @@ path = "src/main.rs"
 [package.metadata.deb]
 maintainer = "George Oastler <goastler4@gmail.com>"
 section = "net"
+depends = ""
 
 [package.metadata.generate-rpm]
 assets = [
