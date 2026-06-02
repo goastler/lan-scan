@@ -4,28 +4,47 @@ A fast LAN network scanner. Discovers devices on the local network via ARP and o
 
 Built out of frustration with router web GUIs that don't show all connected devices — looking at you, BT Home Hub.
 
+## Install
+
+**cargo:**
+```bash
+cargo install lanscan
+```
+
+**AUR (Arch Linux):**
+```bash
+yay -S lanscan
+```
+
+**Binary releases:** download a pre-built binary for your platform from the [releases page](https://github.com/goastler/lan-scan/releases/latest).
+
 ## Requirements
 
-- Linux
-- `sudo` or `CAP_NET_RAW` (required for raw Ethernet sockets used by ARP scanning)
-- Rust toolchain (to build)
-
-## Build
-
-```bash
-cargo build --release
-```
+- Linux (or macOS)
+- `sudo` or `CAP_NET_RAW` — required for raw Ethernet sockets used by ARP scanning
 
 ## Usage
 
-```bash
-sudo ./target/release/lan [OPTIONS]
+```
+LAN network scanner — discovers devices via ARP, optionally scans TCP/UDP ports
+
+Usage: lanscan [OPTIONS]
+
+Options:
+  -i, --interface <INTERFACE>        Network interface to scan (default: auto-detect)
+  -t, --timeout <TIMEOUT>            Seconds to wait for ARP replies [default: 3]
+      --tcp [<PORTS>]                TCP connect scan; optional port list e.g. "22,80,100-200" (default: 1-65535)
+      --udp [<PORTS>]                UDP probe scan; optional port list e.g. "53,123,161" (default: 1-65535)
+  -n, --network <CIDR>               IP range to scan in CIDR notation, e.g. 10.0.0.0/24 (default: interface subnet)
+      --scan-timeout <SCAN_TIMEOUT>  Per-port timeout in milliseconds for TCP/UDP scanning [default: 200]
+  -h, --help                         Print help
+  -V, --version                      Print version
 ```
 
 ### ARP discovery only
 
 ```bash
-sudo ./target/release/lan
+sudo lanscan
 ```
 
 ```
@@ -43,25 +62,25 @@ IP Address       MAC Address        Hostname
 ### TCP port scan (all ports)
 
 ```bash
-sudo ./target/release/lan --tcp
+sudo lanscan --tcp
 ```
 
 ### TCP port scan (specific ports)
 
 ```bash
-sudo ./target/release/lan --tcp 22,80,443,8080
+sudo lanscan --tcp 22,80,443,8080
 ```
 
 ### UDP probe scan
 
 ```bash
-sudo ./target/release/lan --udp 53,123,161,5353
+sudo lanscan --udp 53,123,161,5353
 ```
 
 ### TCP and UDP together
 
 ```bash
-sudo ./target/release/lan --tcp 22,80,443 --udp 53,123
+sudo lanscan --tcp 22,80,443 --udp 53,123
 ```
 
 Port scan output appends after ARP discovery:
@@ -79,43 +98,30 @@ A `?` suffix on a UDP port means *open|filtered* — no response was received wi
 ### Scan a specific IP range
 
 ```bash
-sudo ./target/release/lan --network 10.0.10.0/24
+sudo lanscan --network 10.0.10.0/24
 ```
 
-Useful when you want to scan a subnet different from your interface's own, or when scanning the WiFi subnet from a wired interface:
+Useful when scanning a subnet different from your interface's own, or the WiFi subnet from a wired interface:
 
 ```bash
-sudo ./target/release/lan --interface eth0 --network 192.168.1.0/24
+sudo lanscan --interface eth0 --network 192.168.1.0/24
 ```
 
 ### Scan a specific interface
 
 ```bash
-sudo ./target/release/lan --interface wlan0
+sudo lanscan --interface wlan0
 ```
 
 ### Tune timeouts
 
 ```bash
 # Wait 5 seconds for ARP replies (useful on slow/busy networks)
-sudo ./target/release/lan --timeout 5
+sudo lanscan --timeout 5
 
 # Use 500ms per-port timeout for TCP/UDP (useful across VPNs or slow links)
-sudo ./target/release/lan --tcp --scan-timeout 500
+sudo lanscan --tcp --scan-timeout 500
 ```
-
-## Options
-
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--interface` | `-i` | auto-detect | Network interface to use |
-| `--timeout` | `-t` | `3` | Seconds to collect ARP replies |
-| `--network` | `-n` | interface subnet | CIDR range to scan, e.g. `192.168.1.0/24` |
-| `--tcp [PORTS]` | | off | TCP connect scan. Omit PORTS to scan all 1–65535 |
-| `--udp [PORTS]` | | off | UDP probe scan. Omit PORTS to probe all 1–65535 |
-| `--scan-timeout` | | `200` | Per-port timeout in ms for TCP/UDP |
-
-Port lists accept comma-separated ports and ranges: `22,80,100-200,443`.
 
 ## How it works
 
@@ -134,6 +140,6 @@ If your router separates wired and wireless into different subnets, use `--netwo
 ## Running tests
 
 ```bash
-cargo test                          # unit tests only (no root required)
+cargo test                            # unit tests only (no root required)
 sudo cargo test -- --include-ignored  # includes live ARP and DNS tests
 ```
